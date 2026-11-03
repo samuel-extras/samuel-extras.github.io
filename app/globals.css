@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+@theme {
+  --color-line: #1b2521;
+  --color-ink: #e8e6df;
+  --color-dim: #8d918c;
+  --color-beam: #d6e9ff;
+  /* Scope channel colours: one per section. */
+  --color-ch1: #f7d046;
+  --color-ch2: #3fd8f2;
+  --color-ch3: #f25fc4;
+  --color-ch4: #45d483;
+  --ease-signal: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@theme inline {
+  --font-sans: var(--font-recursive), ui-sans-serif, system-ui, sans-serif;
+}
+
+@utility mono {
+  font-variation-settings: "MONO" 1;
+}
+
+@layer base {
+  html {
+    background: #000;
+    color: var(--color-ink);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-beam);
+    color: #000;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-beam);
+    outline-offset: 4px;
+  }
+}
+
+/* The name: mono and light while it decodes, then it locks into the heavy sans. */
+.decode {
+  font-variation-settings: "MONO" 1;
+  font-weight: 300;
+  transition-property: font-variation-settings, font-weight, letter-spacing;
+  transition-duration: 1s;
+  transition-timing-function: var(--ease-signal);
+}
+.decode[data-locked] {
+  font-variation-settings: "MONO" 0;
+  font-weight: 850;
+  letter-spacing: -0.045em;
+}
+
+/* A channel's ground marker: the tab a scope puts at the zero line of each trace. */
+.marker {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.4rem;
+  padding-right: 0.4rem;
+  background: var(--ch);
+  color: #000;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variation-settings: "MONO" 1;
+  line-height: 1;
+  clip-path: polygon(0 0, 68% 0, 100% 50%, 68% 100%, 0 100%);
+}
+
+/* Small scope screens with a 10 by 8 graticule. */
+.graticule {
+  background-color: #000;
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 10% 12.5%;
+}
+
+/* Chart gridlines, one per project count. */
+.ticks {
+  background-image: repeating-linear-gradient(90deg, var(--color-line) 0 1px, transparent 1px calc(100% / 6));
+  background-origin: content-box;
+  background-clip: content-box;
+}
+/* On phones the project names sit under each bar, so keep the gridlines to the bar's band. */
+@media (width < 48rem) {
+  .ticks {
+    background-size: 100% 1.25rem;
+    background-repeat: no-repeat;
+  }
+}
+
+.wave {
+  transform-box: fill-box;
+}
+
+.pulse {
+  stroke-dasharray: 0.08 0.92;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.group:hover .pulse,
+.group:focus-within .pulse {
+  opacity: 1;
+}
+
+/* Scroll progress, drawn like a trace along the top edge. */
+.progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: none;
+  height: 2px;
+  background: var(--color-beam);
+  box-shadow: 0 0 8px var(--color-beam);
+  transform-origin: left;
+}
+@supports (animation-timeline: scroll()) {
+  .progress {
+    display: block;
+    animation: grow linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  .wave {
+    animation: slide 2.8s linear infinite;
+  }
+  .group:hover .pulse,
+  .group:focus-within .pulse {
+    animation: run 2.4s linear infinite;
+  }
+  /* Each channel's trace, and each chart bar, draws in once as it scrolls into view. */
+  @supports (animation-timeline: view()) {
+    .draw {
+      animation: draw linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 25%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decode {
+    font-variation-settings: "MONO" 0;
+    font-weight: 850;
+    letter-spacing: -0.045em;
+  }
+}
+
+@keyframes slide {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes run {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
